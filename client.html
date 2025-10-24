@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WSS Chat Test</title>
+</head>
+<style>
+    body { font-family: sans-serif; display: grid; grid-template-rows: 1fr 50px; height: 95vh; }
+    #chat-box { border: 1px solid #ccc; padding: 10px; overflow-y: scroll; }
+    #input-form { display: grid; grid-template-columns: 1fr 100px; }
+    #message-input { width: 100%; box-sizing: border-box; }
+    #chat-box div { margin-bottom: 5px; }
+</style>
+<body>
+
+    <div id="chat-box">
+        <div>Connecting to secure server...</div>
+    </div>
+
+    <form id="input-form">
+        <input id="message-input" type="text" placeholder="Type a message..." autocomplete="off">
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        // --- WebSocket Connection ---
+        // Note: We use wss:// (not ws://)
+        // Since we used a self-signed cert, your browser will show a
+        // "Not Secure" warning. You MUST click "Advanced" and "Proceed"
+        // in your browser for this to work.
+        const ws = new WebSocket('wss://localhost:8765');
+        
+        const chatBox = document.getElementById('chat-box');
+        const inputForm = document.getElementById('input-form');
+        const messageInput = document.getElementById('message-input');
+
+        function addMessage(message) {
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = message;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+        }
+
+        ws.onopen = (event) => {
+            addMessage('Connected! You can now send messages.');
+        };
+
+        ws.onmessage = (event) => {
+            // event.data contains the message from the server
+            addMessage('Received: ' + event.data);
+        };
+
+        ws.onclose = (event) => {
+            addMessage('Connection closed.');
+        };
+
+        ws.onerror = (error) => {
+            addMessage('WebSocket Error: See browser console.');
+            console.error('WebSocket Error:', error);
+        };
+
+        // --- Form Submission ---
+        inputForm.onsubmit = (event) => {
+            event.preventDefault(); // Don't refresh the page
+            const message = messageInput.value;
+            if (message) {
+                ws.send(message); // Send the message over the WebSocket
+                addMessage('Sent: ' + message); // Add our own message to the chat
+                messageInput.value = ''; // Clear the input
+            }
+        };
+    </script>
+</body>
+</html>
